@@ -46,3 +46,5 @@ src/newlib/newlib/libc/sys/arm/adi/adi_osal.h
 src/newlib/newlib/libc/sys/arm/adi/adi_osal_arch.h
 src/newlib/newlib/libc/sys/arm/adi/fatal_error_code.h
 src/newlib/newlib/libc/sys/arm/adi_crt.mk
+
+builddir

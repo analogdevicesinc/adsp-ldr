@@ -1,0 +1,37 @@
+project('adsp-ldr', 'c',
+  version : 'v1.0.0',
+  meson_version : '>= 0.56.0',
+)
+
+add_project_arguments('-D_GNU_SOURCE', language : 'c')
+
+cc = meson.get_compiler('c')
+
+threads = dependency('threads')
+libusb = dependency('libusb-1.0', required : false)
+
+# Check for elf.h, which is needed for parsing ELF files
+have_elf_h = cc.has_header('elf.h')
+
+sources = [
+  'src/ldr/helpers.c',
+  'src/ldr/ldr.c',
+  'src/ldr/ldr_elf.c',
+  'src/ldr/lfd.c',
+  'src/ldr/lfd_bf506.c',
+  'src/ldr/lfd_bf518.c',
+  'src/ldr/lfd_bf527.c',
+  'src/ldr/lfd_bf533.c',
+  'src/ldr/lfd_bf537.c',
+  'src/ldr/lfd_bf548.c',
+  'src/ldr/lfd_bf561.c',
+  'src/ldr/lfd_bf592.c',
+  'src/ldr/lfd_bf609.c',
+  'src/ldr/lfd_sc589.c',
+]
+
+executable('ldr',
+  sources,
+  dependencies : [threads, libusb],
+  install : true,
+)
