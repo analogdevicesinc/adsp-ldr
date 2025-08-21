@@ -6,9 +6,6 @@
 #ifndef __HELPERS_H__
 #define __HELPERS_H__
 
-#ifndef VERSION
-# define VERSION "live"
-#endif
 
 extern int force, verbose, quiet, debug;
 

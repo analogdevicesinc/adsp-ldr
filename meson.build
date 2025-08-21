@@ -1,9 +1,15 @@
 project('adsp-ldr', 'c',
-  version : 'v1.0.0',
-  meson_version : '>= 0.56.0',
+  version : run_command(
+    ['utils/version.sh', 'get-vcs'],
+    check: true
+  ).stdout().strip(),
+  meson_version : '>= 1.4.0',
 )
 
+meson.add_dist_script('utils/version.sh', 'set-dist', meson.project_version())
+
 add_project_arguments('-D_GNU_SOURCE', language : 'c')
+add_project_arguments('-DVERSION="' + meson.project_version() + '"', language : 'c')
 
 cc = meson.get_compiler('c')
 
