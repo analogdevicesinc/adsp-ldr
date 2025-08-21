@@ -30,8 +30,17 @@ sources = [
   'src/ldr/lfd_sc589.c',
 ]
 
-executable('ldr',
+exe = executable('ldr',
   sources,
   dependencies : [threads, libusb],
   install : true,
 )
+
+test('Dump DXEs from example bf548.ldr', exe,
+  args : ['-T', 'BF548', '--dump', join_paths(meson.project_source_root(), 'tests/data/bf548.ldr')],
+  is_parallel : false)
+
+test('Verify hash of BF548 DXEs',
+  find_program('tests/verify-bf548-md5.sh'),
+  workdir : meson.project_source_root(),
+  is_parallel : false)

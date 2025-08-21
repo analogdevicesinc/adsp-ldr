@@ -23,3 +23,6 @@ jobs:
 
     - name: Build
       run: meson compile -C builddir
+
+    - name: Test
+      run: meson test -C builddir
