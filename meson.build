@@ -2,7 +2,7 @@ project('adsp-ldr', 'c',
   version : run_command(
     ['utils/version.sh', 'get-vcs'],
     check: true
-  ).stdout().strip()
+  ).stdout().strip(),
   meson_version : '>= 1.4.0',
 )
 
