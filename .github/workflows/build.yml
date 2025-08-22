@@ -5,6 +5,8 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -12,14 +14,37 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
     - name: Install dependencies
-      run: sudo apt-get install -y autoconf automake libtool
+      run: |
+        sudo apt-get install -y libusb-1.0-0-dev
+        pip install meson
 
     - name: Configure
-      run: ./configure
-      working-directory: ./src/ldr
+      run: meson setup builddir
 
     - name: Build
-      run: make
-      working-directory: ./src/ldr
+      run: meson compile -C builddir
+
+    - name: Test
+      run: meson test -C builddir
+
+    - name: Create release archive
+      run: meson dist -C builddir
+
+    - name: Upload release archive as artifact
+      uses: actions/upload-artifact@v4
+      if: ${{ github.event_name != 'release' }}
+      with:
+        name: adsp-ldr
+        path: builddir/meson-dist/*.tar.xz
+
+    - name: Upload release archive to release
+      uses: svenstaro/upload-release-action@v2
+      if: ${{ github.event_name == 'release' }}
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: builddir/meson-dist/adsp-ldr-${{ github.ref_name }}.tar.xz
+        tag: ${{ github.ref }}
