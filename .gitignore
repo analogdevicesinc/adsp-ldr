@@ -4,3 +4,5 @@ tests/data/bf548.ldr-0.dxe-1.block
 tests/data/bf548.ldr-0.dxe-2.block
 tests/data/bf548.ldr-0.dxe-21.block
 tests/data/bf548.ldr-0.dxe-30.block
+tests/data/u-boot-spl.ldr
+tests/data/u-boot.ldr

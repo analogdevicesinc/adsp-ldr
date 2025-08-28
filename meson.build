@@ -50,3 +50,22 @@ test('Verify hash of BF548 DXEs',
   find_program('tests/verify-bf548-md5.sh'),
   workdir : meson.project_source_root(),
   is_parallel : false)
+
+test('Create LDR from example u-boot-spl', exe,
+  args : ['-T', 'ADSP-SC598-0.0', '--create',
+          join_paths(meson.project_source_root(), 'tests/data/u-boot-spl.ldr'),
+          join_paths(meson.project_source_root(), 'tests/data/u-boot-spl'),
+          '--bcode=2', '--use-vmas'],
+  is_parallel : false)
+
+test('Create LDR from example u-boot-spl', exe,
+  args : ['-T', 'ADSP-SC598-0.0', '--create',
+          join_paths(meson.project_source_root(), 'tests/data/u-boot.ldr'),
+          join_paths(meson.project_source_root(), 'tests/data/u-boot'),
+          '--bcode=2', '--use-vmas'],
+  is_parallel : false)
+
+test('Verify hash of U-Boot LDRs',
+  find_program('tests/verify-ubootspl-md5.sh'),
+  workdir : meson.project_source_root(),
+  is_parallel : false)
