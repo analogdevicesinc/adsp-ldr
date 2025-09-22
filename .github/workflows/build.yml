@@ -8,6 +8,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  id-token: write # Required for OIDC authentication
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,8 +22,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get install -y libusb-1.0-0-dev
+        sudo apt-get install -y libusb-1.0-0-dev ruby-rubygems
         pip install meson
+        sudo gem install fpm
 
     - name: Configure
       run: meson setup builddir
@@ -48,3 +52,24 @@ jobs:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: builddir/meson-dist/adsp-ldr-${{ github.ref_name }}.tar.xz
         tag: ${{ github.ref }}
+
+    - name: Generate deb/rpm packages
+      run: utils/package-dist.sh
+
+    - name: Authenticate with Cloudsmith via OIDC
+      uses: cloudsmith-io/cloudsmith-cli-action@v1.0.3
+      if: ${{ github.event_name == 'release' }}
+      with:
+        oidc-namespace: 'adi'
+        oidc-service-slug: ${{ secrets.CLOUDSMITH_SERVICE_SLUG }}
+        oidc-auth-only: 'false'
+
+    - name: Upload Debian package to Cloudsmith
+      if: ${{ github.event_name == 'release' }}
+      run: |
+        cloudsmith push deb adi/external/ubuntu/any-version *.deb
+
+    - name: Upload RPM package to Cloudsmith
+      if: ${{ github.event_name == 'release' }}
+      run: |
+        cloudsmith push rpm adi/external/any-distro/any-version *.rpm
