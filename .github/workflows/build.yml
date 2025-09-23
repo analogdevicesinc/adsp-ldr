@@ -10,6 +10,7 @@ on:
 
 permissions:
   id-token: write # Required for OIDC authentication
+  contents: write # Required by svenstaro/upload-release-action
 
 jobs:
   build:
