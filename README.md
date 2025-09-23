@@ -10,6 +10,15 @@ ADSP processors.
 
 ## Getting Started
 
+### Install
+
+Navigate to the [ADI Cloudsmith package
+repository](https://cloudsmith.io/~adi/repos/external/packages/) and click on
+"Set Me Up" to get distro-specific instructions to add the ADI repository. Then
+install the package (e.g. `apt-get install adsp-ldr`) and then run `ldr`.
+
+### Build
+
 ```
 sudo apt-get install -y libusb-1.0-0-dev
 pip install meson
