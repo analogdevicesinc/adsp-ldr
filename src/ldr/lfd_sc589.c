@@ -395,6 +395,7 @@ static const struct lfd_target sc589_lfd_target = {
 
 static const char * const sc598_aliases[] = {
 	"SC595", "SC595W", "SC596", "SC596W", "SC598W",
+	"SC846",
 	NULL
 };
 static const struct lfd_target sc598_lfd_target = {
