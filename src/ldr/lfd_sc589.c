@@ -380,7 +380,7 @@ static const char * const sc589_aliases[] = {
 };
 static const struct lfd_target sc589_lfd_target = {
 	.name  = "SC589",
-	.description = "ARM LDR handler for SC5xx",
+	.description = "LDR handler for 32-bit ARM ADSP SC SoCs",
 	.aliases = sc589_aliases,
 	.uart_boot = true,
 	.iovec = {
@@ -399,7 +399,7 @@ static const char * const sc598_aliases[] = {
 };
 static const struct lfd_target sc598_lfd_target = {
 	.name  = "SC598",
-	.description = "AArch64 LDR handler for SC59x",
+	.description = "LDR handler for AArch64 ADSP SC SoCs",
 	.aliases = sc598_aliases,
 	.uart_boot = true,
 	.iovec = {
