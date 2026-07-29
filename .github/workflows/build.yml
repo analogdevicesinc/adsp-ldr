@@ -23,12 +23,22 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get install -y libusb-1.0-0-dev ruby-rubygems
+        sudo apt-get install -y libusb-1.0-0-dev ruby-rubygems clang-format-20
+        # ubuntu-latest registers clang-format-18 at priority 100
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-20 200
         pip install meson
         sudo gem install fpm
 
     - name: Configure
       run: meson setup builddir
+
+    - name: Clang format
+      run: |
+        ninja -C builddir clang-format
+        if ! git diff --exit-code; then
+          echo "ERROR: Source code not formatted. Run meson clang-format."
+          exit 1
+        fi
 
     - name: Build
       run: meson compile -C builddir
