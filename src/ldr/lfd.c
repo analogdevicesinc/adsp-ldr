@@ -849,7 +849,7 @@ static const struct ldr_load_method ldr_load_method_sdp = {
 
 static const struct ldr_load_method *ldr_load_method_detect(const char *device)
 {
-	char *prot = strchr(device, ':');
+	const char *prot = strchr(device, ':');
 	if (!prot || !strncmp(device, "tty:", 4))
 		return &ldr_load_method_tty;
 	else if (!strncmp(device, "sdp:", 4))
