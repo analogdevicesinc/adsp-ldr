@@ -10,8 +10,9 @@
 #ifndef HAVE_MMAP
 #define PROT_READ 0x1
 #define MAP_SHARED 0x001
-#define MAP_FAILED ((void *) -1)
-static void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset)
+#define MAP_FAILED ((void *)-1)
+static void *mmap(void *start, size_t length, int prot, int flags, int fd,
+		  off_t offset)
 {
 	void *ret = xmalloc(length);
 
@@ -35,15 +36,13 @@ static int munmap(void *start, size_t length)
 char do_reverse_endian;
 
 /* valid elf buffer check */
-#define IS_ELF_BUFFER(buff) \
-	(buff[EI_MAG0] == ELFMAG0 && \
-	 buff[EI_MAG1] == ELFMAG1 && \
-	 buff[EI_MAG2] == ELFMAG2 && \
-	 buff[EI_MAG3] == ELFMAG3)
+#define IS_ELF_BUFFER(buff)                                      \
+	(buff[EI_MAG0] == ELFMAG0 && buff[EI_MAG1] == ELFMAG1 && \
+	 buff[EI_MAG2] == ELFMAG2 && buff[EI_MAG3] == ELFMAG3)
 /* for now, only handle little endian as it
  * simplifies the input code greatly */
-#define DO_WE_LIKE_ELF(buff) \
-	((buff[EI_CLASS] == ELFCLASS32 || buff[EI_CLASS] == ELFCLASS64) && \
+#define DO_WE_LIKE_ELF(buff)                                                   \
+	((buff[EI_CLASS] == ELFCLASS32 || buff[EI_CLASS] == ELFCLASS64) &&     \
 	 (buff[EI_DATA] == ELFDATA2LSB /*|| buff[EI_DATA] == ELFDATA2MSB*/) && \
 	 (buff[EI_VERSION] == EV_CURRENT))
 
@@ -73,7 +72,7 @@ elfobj *elf_open(const char *filename, Elf32_Half emach)
 	elf->filename = filename;
 	elf->elf_class = elf->data[EI_CLASS];
 	do_reverse_endian = (ELF_DATA != elf->data[EI_DATA]);
-	elf->ehdr = (void*)elf->data;
+	elf->ehdr = (void *)elf->data;
 
 	/* lookup the program and section header tables */
 	{
@@ -83,20 +82,22 @@ elfobj *elf_open(const char *filename, Elf32_Half emach)
 		if (ELF_GET_EHDR_FIELD(elf, e_phnum) <= 0)
 			elf->phdr = NULL;
 		else
-			elf->phdr = elf->data + ELF_GET_EHDR_FIELD(elf, e_phoff);
-		if (ELF_GET_EHDR_FIELD(elf,e_shnum) <= 0)
+			elf->phdr =
+				elf->data + ELF_GET_EHDR_FIELD(elf, e_phoff);
+		if (ELF_GET_EHDR_FIELD(elf, e_shnum) <= 0)
 			elf->shdr = NULL;
 		else
-			elf->shdr = elf->data + ELF_GET_EHDR_FIELD(elf, e_shoff);
+			elf->shdr =
+				elf->data + ELF_GET_EHDR_FIELD(elf, e_shoff);
 	}
 
 	return elf;
 
- err_munmap:
+err_munmap:
 	munmap(elf->data, elf->len);
- err_close:
+err_close:
 	close(elf->fd);
- err_free:
+err_free:
 	free(elf);
 	return NULL;
 }
@@ -122,9 +123,8 @@ void *elf_lookup_section(const elfobj *elf, const char *name)
 
 	for (i = 0; i < shnum; ++i) {
 		void *shdr = ELF_GET_SHDR(elf, i);
-		Elf64_Off offset =
-			ELF_GET_SHDR_FIELD(elf, strtab, sh_offset) +
-			ELF_GET_SHDR_FIELD(elf, shdr, sh_name);
+		Elf64_Off offset = ELF_GET_SHDR_FIELD(elf, strtab, sh_offset) +
+				   ELF_GET_SHDR_FIELD(elf, shdr, sh_name);
 		const char *shdr_name = elf->data + offset;
 		if (!strcmp(shdr_name, name))
 			return shdr;
@@ -151,13 +151,15 @@ void *elf_lookup_symbol(const elfobj *elf, const char *found_sym)
 	for (i = 0; i < cnt; ++i) {
 		void *sym = ELF_GET_SYM(elf, symtab, i);
 		const char *symname =
-			elf->data + ELF_GET_SHDR_FIELD(elf, strscn, sh_offset)
-			          + ELF_GET_SYM_FIELD(elf, sym, st_name);
+			elf->data + ELF_GET_SHDR_FIELD(elf, strscn, sh_offset) +
+			ELF_GET_SYM_FIELD(elf, sym, st_name);
 		if (!strcmp(symname, found_sym)) {
-			void *shdr = ELF_GET_SHDR(elf, ELF_GET_SYM_FIELD(elf, sym, st_shndx));
-			return elf->data + ELF_GET_SHDR_FIELD(elf, shdr, sh_offset)
-			                 + ELF_GET_SYM_FIELD(elf, sym, st_value)
-			                 - ELF_GET_SHDR_FIELD(elf, shdr, sh_addr);
+			void *shdr = ELF_GET_SHDR(
+				elf, ELF_GET_SYM_FIELD(elf, sym, st_shndx));
+			return elf->data +
+			       ELF_GET_SHDR_FIELD(elf, shdr, sh_offset) +
+			       ELF_GET_SYM_FIELD(elf, sym, st_value) -
+			       ELF_GET_SHDR_FIELD(elf, shdr, sh_addr);
 		}
 	}
 

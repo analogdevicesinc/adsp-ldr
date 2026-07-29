@@ -9,38 +9,38 @@
 /* 10-byte block header; See page 19-13 of BF537 HRM */
 #define LDR_BLOCK_HEADER_LEN (10)
 typedef struct {
-	uint8_t raw[LDR_BLOCK_HEADER_LEN];        /* buffer for following members ... needs to be first */
-	uint32_t target_address;                  /* blackfin memory address to load block */
-	uint32_t byte_count;                      /* number of bytes in block */
-	uint16_t flags;                           /* flags to control behavior */
+	uint8_t raw[LDR_BLOCK_HEADER_LEN]; /* buffer for following members ... needs to be first */
+	uint32_t target_address; /* blackfin memory address to load block */
+	uint32_t byte_count; /* number of bytes in block */
+	uint16_t flags; /* flags to control behavior */
 } BLOCK_HEADER;
 
 /* block flags; See page 19-14 of BF537 HRM */
-#define LDR_FLAG_ZEROFILL    0x0001
-#define LDR_FLAG_RESVECT     0x0002
-#define LDR_FLAG_INIT        0x0008
-#define LDR_FLAG_IGNORE      0x0010
-#define LDR_FLAG_PPORT_MASK  0x0600
-#define LDR_FLAG_PPORT_NONE  0x0000
+#define LDR_FLAG_ZEROFILL 0x0001
+#define LDR_FLAG_RESVECT 0x0002
+#define LDR_FLAG_INIT 0x0008
+#define LDR_FLAG_IGNORE 0x0010
+#define LDR_FLAG_PPORT_MASK 0x0600
+#define LDR_FLAG_PPORT_NONE 0x0000
 #define LDR_FLAG_PPORT_PORTF 0x0200
 #define LDR_FLAG_PPORT_PORTG 0x0400
 #define LDR_FLAG_PPORT_PORTH 0x0600
-#define LDR_FLAG_PFLAG_MASK  0x01E0
+#define LDR_FLAG_PFLAG_MASK 0x01E0
 #define LDR_FLAG_PFLAG_SHIFT 5
-#define LDR_FLAG_COMPRESSED  0x2000
-#define LDR_FLAG_FINAL       0x8000
+#define LDR_FLAG_COMPRESSED 0x2000
+#define LDR_FLAG_FINAL 0x8000
 
 static const struct lfd_flag bf537_lfd_flags[] = {
-	{ LDR_FLAG_ZEROFILL,    "zerofill"  },
-	{ LDR_FLAG_RESVECT,     "resvect"   },
-	{ LDR_FLAG_INIT,        "init"      },
-	{ LDR_FLAG_IGNORE,      "ignore"    },
-	{ LDR_FLAG_PPORT_NONE,  "port_none" },
-	{ LDR_FLAG_PPORT_PORTF, "portf"     },
-	{ LDR_FLAG_PPORT_PORTG, "portg"     },
-	{ LDR_FLAG_PPORT_PORTH, "porth"     },
-	{ LDR_FLAG_COMPRESSED,  "compressed"},
-	{ LDR_FLAG_FINAL,       "final"     },
+	{ LDR_FLAG_ZEROFILL, "zerofill" },
+	{ LDR_FLAG_RESVECT, "resvect" },
+	{ LDR_FLAG_INIT, "init" },
+	{ LDR_FLAG_IGNORE, "ignore" },
+	{ LDR_FLAG_PPORT_NONE, "port_none" },
+	{ LDR_FLAG_PPORT_PORTF, "portf" },
+	{ LDR_FLAG_PPORT_PORTG, "portg" },
+	{ LDR_FLAG_PPORT_PORTH, "porth" },
+	{ LDR_FLAG_COMPRESSED, "compressed" },
+	{ LDR_FLAG_FINAL, "final" },
 	{ 0, 0 }
 };
 
@@ -52,15 +52,20 @@ static const struct lfd_flag bf537_lfd_flags[] = {
  * [4 bytes for byte count]
  * [2 bytes for flags]
  */
-void *bf53x_lfd_read_block_header(LFD *alfd, bool *ignore, bool *fill, bool *final, size_t *header_len, size_t *data_len)
+void *bf53x_lfd_read_block_header(LFD *alfd, bool *ignore, bool *fill,
+				  bool *final, size_t *header_len,
+				  size_t *data_len)
 {
 	FILE *fp = alfd->fp;
 	BLOCK_HEADER *header = xmalloc(sizeof(*header));
-	if (fread(header->raw, 1, LDR_BLOCK_HEADER_LEN, fp) != LDR_BLOCK_HEADER_LEN)
+	if (fread(header->raw, 1, LDR_BLOCK_HEADER_LEN, fp) !=
+	    LDR_BLOCK_HEADER_LEN)
 		return NULL;
-	memcpy(&(header->target_address), header->raw, sizeof(header->target_address));
-	memcpy(&(header->byte_count), header->raw+4, sizeof(header->byte_count));
-	memcpy(&(header->flags), header->raw+8, sizeof(header->flags));
+	memcpy(&(header->target_address), header->raw,
+	       sizeof(header->target_address));
+	memcpy(&(header->byte_count), header->raw + 4,
+	       sizeof(header->byte_count));
+	memcpy(&(header->flags), header->raw + 8, sizeof(header->flags));
 	ldr_make_little_endian_32(header->target_address);
 	ldr_make_little_endian_32(header->byte_count);
 	ldr_make_little_endian_16(header->flags);
@@ -89,20 +94,29 @@ bool bf53x_lfd_display_dxe(LFD *alfd, size_t d)
 		BLOCK *block = &(ldr->dxes[d].blocks[b]);
 		BLOCK_HEADER *header = block->header;
 		if (quiet)
-			printf("    Block %2zu 0x%08zX: ", b+1, block->offset);
+			printf("    Block %2zu 0x%08zX: ", b + 1,
+			       block->offset);
 		else
-			printf("    Block %2zu at 0x%08zX\n", b+1, block->offset);
+			printf("    Block %2zu at 0x%08zX\n", b + 1,
+			       block->offset);
 
 		if (quiet) {
-			printf("0x%08X 0x%08X 0x%04X ( ", header->target_address, header->byte_count, header->flags);
+			printf("0x%08X 0x%08X 0x%04X ( ",
+			       header->target_address, header->byte_count,
+			       header->flags);
 		} else if (verbose) {
-			printf("\t\tTarget Address: 0x%08X ( %s )\n", header->target_address,
-				(header->target_address > 0xFF000000 ? "L1" : "SDRAM"));
-			printf("\t\t    Byte Count: 0x%08X ( %u bytes )\n", header->byte_count, header->byte_count);
-			printf("\t\t         Flags: 0x%04X     ( ", header->flags);
+			printf("\t\tTarget Address: 0x%08X ( %s )\n",
+			       header->target_address,
+			       (header->target_address > 0xFF000000 ? "L1" :
+								      "SDRAM"));
+			printf("\t\t    Byte Count: 0x%08X ( %u bytes )\n",
+			       header->byte_count, header->byte_count);
+			printf("\t\t         Flags: 0x%04X     ( ",
+			       header->flags);
 		} else {
 			printf("         Addr: 0x%08X Bytes: 0x%08X Flags: 0x%04X ( ",
-				header->target_address, header->byte_count, header->flags);
+			       header->target_address, header->byte_count,
+			       header->flags);
 		}
 
 		hflags = header->flags & ~ignore_flags;
@@ -130,33 +144,40 @@ bool bf53x_lfd_display_dxe(LFD *alfd, size_t d)
 /*
  * ldr_create()
  */
-static bool _bf53x_lfd_write_header(FILE *fp, uint16_t flags,
-                                    uint32_t addr, uint32_t count)
+static bool _bf53x_lfd_write_header(FILE *fp, uint16_t flags, uint32_t addr,
+				    uint32_t count)
 {
 	ldr_make_little_endian_32(addr);
 	ldr_make_little_endian_32(count);
 	ldr_make_little_endian_16(flags);
-	return
-		fwrite(&addr, sizeof(addr), 1, fp) == 1 &&
-		fwrite(&count, sizeof(count), 1, fp) == 1 &&
-		fwrite(&flags, sizeof(flags), 1, fp) == 1;
+	return fwrite(&addr, sizeof(addr), 1, fp) == 1 &&
+	       fwrite(&count, sizeof(count), 1, fp) == 1 &&
+	       fwrite(&flags, sizeof(flags), 1, fp) == 1;
 }
 
-static void _bf53x_lfd_block_flags(LFD *alfd, const struct ldr_create_options *opts,
-                                   uint16_t *flags, uint32_t *addr)
+static void _bf53x_lfd_block_flags(LFD *alfd,
+				   const struct ldr_create_options *opts,
+				   uint16_t *flags, uint32_t *addr)
 {
 	*flags = 0;
-	if (!target_is(alfd, "BF531") &&
-	    !target_is(alfd, "BF532"))
+	if (!target_is(alfd, "BF531") && !target_is(alfd, "BF532"))
 		*flags |= LDR_FLAG_RESVECT;
 
 	*flags |= (opts->gpio << LDR_FLAG_PFLAG_SHIFT) & LDR_FLAG_PFLAG_MASK;
 	if (family_is(alfd, "BF537")) {
 		switch (toupper(opts->port)) {
-			case 'F': *flags |= LDR_FLAG_PPORT_PORTF; break;
-			case 'G': *flags |= LDR_FLAG_PPORT_PORTG; break;
-			case 'H': *flags |= LDR_FLAG_PPORT_PORTH; break;
-			default:  *flags |= LDR_FLAG_PPORT_NONE; break;
+		case 'F':
+			*flags |= LDR_FLAG_PPORT_PORTF;
+			break;
+		case 'G':
+			*flags |= LDR_FLAG_PPORT_PORTG;
+			break;
+		case 'H':
+			*flags |= LDR_FLAG_PPORT_PORTH;
+			break;
+		default:
+			*flags |= LDR_FLAG_PPORT_NONE;
+			break;
 		}
 	}
 
@@ -171,10 +192,9 @@ bool bf53x_lfd_write_ldr(LFD *alfd, const void *void_opts)
 	uint32_t addr, count;
 
 	/* This dummy block is only needed in flash/fifo boot modes */
-	if (opts->bmode == NULL ||
-	    (strcasecmp(opts->bmode, "parallel") &&
-	     strcasecmp(opts->bmode, "para") &&
-	     strcasecmp(opts->bmode, "fifo")))
+	if (opts->bmode == NULL || (strcasecmp(opts->bmode, "parallel") &&
+				    strcasecmp(opts->bmode, "para") &&
+				    strcasecmp(opts->bmode, "fifo")))
 		return true;
 
 	/* Seed the initial flags/addr values */
@@ -202,9 +222,8 @@ bool bf53x_lfd_write_ldr(LFD *alfd, const void *void_opts)
 	return _bf53x_lfd_write_header(fp, flags, addr, count);
 }
 
-bool bf53x_lfd_write_block(LFD *alfd, uint8_t dxe_flags,
-                           const void *void_opts, uint32_t addr,
-                           uint32_t count, void *src)
+bool bf53x_lfd_write_block(LFD *alfd, uint8_t dxe_flags, const void *void_opts,
+			   uint32_t addr, uint32_t count, void *src)
 {
 	const struct ldr_create_options *opts = void_opts;
 	FILE *fp = alfd->fp;
@@ -248,25 +267,32 @@ bool bf53x_lfd_write_block(LFD *alfd, uint8_t dxe_flags,
 	if (opts->hole.offset) {
 		size_t off = ftello(fp);
 		uint32_t disk_count = (src ? count : 0);
-		if (opts->hole.offset > off && opts->hole.offset < off + LDR_BLOCK_HEADER_LEN + disk_count) {
+		if (opts->hole.offset > off &&
+		    opts->hole.offset <
+			    off + LDR_BLOCK_HEADER_LEN + disk_count) {
 			uint32_t hole_count = opts->hole.length;
 
 			if (dxe_flags & DXE_BLOCK_INIT)
 				err("Punching holes in init blocks is not supported");
 
 			/* fill up what we can to the punched location */
-			ssize_t ssplit_count = opts->hole.offset - off - LDR_BLOCK_HEADER_LEN * 2;
+			ssize_t ssplit_count = opts->hole.offset - off -
+					       LDR_BLOCK_HEADER_LEN * 2;
 			if (ssplit_count < LDR_BLOCK_HEADER_LEN) {
 				/* leading hole is wicked small, so just expand the ignore block a bit */
-				if (opts->hole.offset - off < LDR_BLOCK_HEADER_LEN)
+				if (opts->hole.offset - off <
+				    LDR_BLOCK_HEADER_LEN)
 					err("Unable to punch a hole soon enough");
 				else
-					hole_count += (opts->hole.offset - off - LDR_BLOCK_HEADER_LEN);
+					hole_count += (opts->hole.offset - off -
+						       LDR_BLOCK_HEADER_LEN);
 			} else if (src) {
 				/* squeeze out a little of this block first */
 				uint32_t split_count = ssplit_count;
-				_bf53x_lfd_write_header(fp, flags, addr, split_count);
-				if (fwrite(src, 1, split_count, fp) != split_count)
+				_bf53x_lfd_write_header(fp, flags, addr,
+							split_count);
+				if (fwrite(src, 1, split_count, fp) !=
+				    split_count)
 					return false;
 				src += split_count;
 				addr += split_count;
@@ -275,16 +301,22 @@ bool bf53x_lfd_write_block(LFD *alfd, uint8_t dxe_flags,
 				err("Punching holes with fill blocks?");
 
 			/* finally write out hole */
-			_bf53x_lfd_write_header(fp, flags | LDR_FLAG_IGNORE, 0, hole_count);
+			_bf53x_lfd_write_header(fp, flags | LDR_FLAG_IGNORE, 0,
+						hole_count);
 			if (opts->hole.filler_file) {
-				FILE *filler_fp = fopen(opts->hole.filler_file, "rb");
+				FILE *filler_fp =
+					fopen(opts->hole.filler_file, "rb");
 				if (filler_fp) {
 					size_t bytes, filled = 0;
-					uint8_t filler_buf[8192];	/* random size */
+					uint8_t filler_buf[8192]; /* random size */
 					while (!feof(filler_fp)) {
-						bytes = fread(filler_buf, 1, sizeof(filler_buf), filler_fp);
+						bytes = fread(
+							filler_buf, 1,
+							sizeof(filler_buf),
+							filler_fp);
 						filled += bytes;
-						if (fwrite(filler_buf, 1, bytes, fp) != bytes)
+						if (fwrite(filler_buf, 1, bytes,
+							   fp) != bytes)
 							return false;
 					}
 					if (ferror(filler_fp))
@@ -292,7 +324,8 @@ bool bf53x_lfd_write_block(LFD *alfd, uint8_t dxe_flags,
 					if (filled > hole_count)
 						err("filler file was bigger than the requested hole size");
 					if (filled < hole_count)
-						fseeko(fp, hole_count - filled, SEEK_CUR);
+						fseeko(fp, hole_count - filled,
+						       SEEK_CUR);
 				} else
 					return false;
 			} else
@@ -331,8 +364,7 @@ uint32_t bf53x_lfd_dump_block(BLOCK *block, FILE *fp, bool dump_fill)
 	return header->target_address;
 }
 
-
-static const char * const bf537_aliases[] = { "BF534", "BF536", "BF537", NULL };
+static const char *const bf537_aliases[] = { "BF534", "BF536", "BF537", NULL };
 static const struct lfd_target bf537_lfd_target = {
 	.name  = "BF537",
 	.description = "Blackfin LDR handler for BF534/BF536/BF537",
@@ -349,8 +381,7 @@ static const struct lfd_target bf537_lfd_target = {
 	.dyn_sections = false,
 };
 
-__attribute__((constructor))
-static void bf537_lfd_target_register(void)
+__attribute__((constructor)) static void bf537_lfd_target_register(void)
 {
 	lfd_target_register(&bf537_lfd_target);
 }

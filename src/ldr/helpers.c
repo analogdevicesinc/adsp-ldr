@@ -115,14 +115,15 @@ size_t fread_retry(void *buf, size_t size, size_t nmemb, FILE *fp)
 static const struct {
 	speed_t s;
 	size_t b;
-} speeds[] = {
-	{B0, 0}, {B50, 50}, {B75, 75}, {B110, 110}, {B134, 134}, {B150, 150},
-	{B200, 200}, {B300, 300}, {B600, 600}, {B1200, 1200}, {B1800, 1800},
-	{B2400, 2400}, {B4800, 4800}, {B9600, 9600}, {B19200, 19200},
-	{B38400, 38400}, {B57600, 57600}, {B115200, 115200}, {B230400, 230400}
-};
-__attribute__((const))
-static inline size_t tty_speed_to_baud(const speed_t speed)
+} speeds[] = { { B0, 0 },	   { B50, 50 },	      { B75, 75 },
+	       { B110, 110 },	   { B134, 134 },     { B150, 150 },
+	       { B200, 200 },	   { B300, 300 },     { B600, 600 },
+	       { B1200, 1200 },	   { B1800, 1800 },   { B2400, 2400 },
+	       { B4800, 4800 },	   { B9600, 9600 },   { B19200, 19200 },
+	       { B38400, 38400 },  { B57600, 57600 }, { B115200, 115200 },
+	       { B230400, 230400 } };
+__attribute__((const)) static inline size_t
+tty_speed_to_baud(const speed_t speed)
 {
 	size_t i;
 	for (i = 0; i < ARRAY_SIZE(speeds); ++i)
@@ -130,8 +131,7 @@ static inline size_t tty_speed_to_baud(const speed_t speed)
 			return speeds[i].b;
 	return 0;
 }
-__attribute__((const))
-static inline size_t tty_baud_to_speed(const size_t baud)
+__attribute__((const)) static inline size_t tty_baud_to_speed(const size_t baud)
 {
 	size_t i;
 	for (i = 0; i < ARRAY_SIZE(speeds); ++i)
@@ -246,7 +246,8 @@ static const char *_tty_get_lock_name(const char *tty)
 		base_tty = tty;
 	else
 		++base_tty;
-	snprintf(lockfile, sizeof(lockfile), "%s/LCK..%s", _tty_get_lock_dir(), base_tty);
+	snprintf(lockfile, sizeof(lockfile), "%s/LCK..%s", _tty_get_lock_dir(),
+		 base_tty);
 	return lockfile;
 }
 
@@ -276,10 +277,12 @@ bool tty_lock(const char *tty)
 		if (fscanf(fp, "%lu", &pid) == 1) {
 			if (kill(pid, 0) == -1 && errno == ESRCH) {
 				if (!quiet)
-					printf("Removing stale lock '%s'\n", lockfile);
+					printf("Removing stale lock '%s'\n",
+					       lockfile);
 				unlink(lockfile);
 			} else if (verbose)
-				printf("TTY '%s' is locked by pid '%lu'\n", tty, pid);
+				printf("TTY '%s' is locked by pid '%lu'\n", tty,
+				       pid);
 		}
 		fclose(fp);
 	}
@@ -340,7 +343,7 @@ void tty_stdin_init(void)
 #endif /* HAVE_TERMIOS_H */
 
 #ifdef HAVE_BACKTRACE
-# include <execinfo.h>
+#include <execinfo.h>
 void error_backtrace(void)
 {
 	void *funcs[10];
@@ -353,6 +356,7 @@ void error_backtrace(void)
 }
 void error_backtrace_maybe(void)
 {
-	if (debug) error_backtrace();
+	if (debug)
+		error_backtrace();
 }
 #endif

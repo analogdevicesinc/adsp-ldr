@@ -9,7 +9,7 @@
 #include "headers.h"
 
 #ifndef EM_BLACKFIN
-# define EM_BLACKFIN 106
+#define EM_BLACKFIN 106
 #endif
 
 /* only support 1 ELF at a time for now ... */
@@ -26,16 +26,25 @@ typedef struct {
 	const char *filename;
 } elfobj;
 
-#define EGET(X) \
-	(__extension__ ({ \
-		uint32_t __res; \
-		if (!do_reverse_endian) {    __res = (X); \
-		} else if (sizeof(X) == 1) { __res = (X); \
-		} else if (sizeof(X) == 2) { __res = bswap_16((X)); \
-		} else if (sizeof(X) == 4) { __res = bswap_32((X)); \
-		} else if (sizeof(X) == 8) { printf("64bit types not supported\n"); exit(1); \
-		} else { printf("Unknown type size %i\n", (int)sizeof(X)); exit(1); } \
-		__res; \
+#define EGET(X)                                                           \
+	(__extension__({                                                  \
+		uint32_t __res;                                           \
+		if (!do_reverse_endian) {                                 \
+			__res = (X);                                      \
+		} else if (sizeof(X) == 1) {                              \
+			__res = (X);                                      \
+		} else if (sizeof(X) == 2) {                              \
+			__res = bswap_16((X));                            \
+		} else if (sizeof(X) == 4) {                              \
+			__res = bswap_32((X));                            \
+		} else if (sizeof(X) == 8) {                              \
+			printf("64bit types not supported\n");            \
+			exit(1);                                          \
+		} else {                                                  \
+			printf("Unknown type size %i\n", (int)sizeof(X)); \
+			exit(1);                                          \
+		}                                                         \
+		__res;                                                    \
 	}))
 
 #define EHDR32(ptr) ((Elf32_Ehdr *)(ptr))
@@ -53,40 +62,35 @@ typedef struct {
 #define SYM32(ptr) ((Elf32_Sym *)(ptr))
 #define SYM64(ptr) ((Elf64_Sym *)(ptr))
 
-#define ELF_GET_EHDR_FIELD(elf, field) \
-  (elf->elf_class == ELFCLASS32 \
-   ? EGET(EHDR32(elf->ehdr)->field) \
-   : EGET(EHDR64(elf->ehdr)->field))
+#define ELF_GET_EHDR_FIELD(elf, field)                                   \
+	(elf->elf_class == ELFCLASS32 ? EGET(EHDR32(elf->ehdr)->field) : \
+					EGET(EHDR64(elf->ehdr)->field))
 
-#define ELF_GET_SHDR(elf, index) \
-  (elf->elf_class == ELFCLASS32 \
-   ? (void *)(SHDR32(elf->shdr) + (index)) \
-   : (void *)(SHDR64(elf->shdr) + (index)))
+#define ELF_GET_SHDR(elf, index)                         \
+	(elf->elf_class == ELFCLASS32 ?                  \
+		 (void *)(SHDR32(elf->shdr) + (index)) : \
+		 (void *)(SHDR64(elf->shdr) + (index)))
 
-#define ELF_GET_SHDR_FIELD(elf, shdr, field) \
-  (elf->elf_class == ELFCLASS32 \
-   ? EGET(SHDR32(shdr)->field) \
-   : EGET(SHDR64(shdr)->field))
+#define ELF_GET_SHDR_FIELD(elf, shdr, field)                        \
+	(elf->elf_class == ELFCLASS32 ? EGET(SHDR32(shdr)->field) : \
+					EGET(SHDR64(shdr)->field))
 
-#define ELF_GET_PHDR(elf, index) \
-  (elf->elf_class == ELFCLASS32 \
-   ? (void *)(PHDR32(elf->phdr) + (index)) \
-   : (void *)(PHDR64(elf->phdr) + (index)))
+#define ELF_GET_PHDR(elf, index)                         \
+	(elf->elf_class == ELFCLASS32 ?                  \
+		 (void *)(PHDR32(elf->phdr) + (index)) : \
+		 (void *)(PHDR64(elf->phdr) + (index)))
 
-#define ELF_GET_PHDR_FIELD(elf, phdr, field) \
-  (elf->elf_class == ELFCLASS32 \
-   ? EGET(PHDR32(phdr)->field) \
-   : EGET(PHDR64(phdr)->field))
+#define ELF_GET_PHDR_FIELD(elf, phdr, field)                        \
+	(elf->elf_class == ELFCLASS32 ? EGET(PHDR32(phdr)->field) : \
+					EGET(PHDR64(phdr)->field))
 
-#define ELF_GET_SYM(elf, symtab, index) \
-  (elf->elf_class == ELFCLASS32 \
-   ? (void *)(SYM32(symtab) + (index)) \
-   : (void *)(SYM64(symtab) + (index)))
+#define ELF_GET_SYM(elf, symtab, index)                                     \
+	(elf->elf_class == ELFCLASS32 ? (void *)(SYM32(symtab) + (index)) : \
+					(void *)(SYM64(symtab) + (index)))
 
-#define ELF_GET_SYM_FIELD(elf, sym, field) \
-  (elf->elf_class == ELFCLASS32 \
-   ? EGET(SYM32(sym)->field) \
-   : EGET(SYM64(sym)->field))
+#define ELF_GET_SYM_FIELD(elf, sym, field)                        \
+	(elf->elf_class == ELFCLASS32 ? EGET(SYM32(sym)->field) : \
+					EGET(SYM64(sym)->field))
 
 extern elfobj *elf_open(const char *filename, Elf32_Half emach);
 extern void elf_close(elfobj *elf);

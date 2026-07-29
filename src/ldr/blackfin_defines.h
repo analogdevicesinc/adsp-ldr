@@ -15,17 +15,17 @@
 #define GET_3RD_NIBBLE(x) ((x & 0x00FF0000) >> 16)
 #define GET_4TH_NIBBLE(x) ((x & 0xFF000000) >> 24)
 
-#define FILL_ADDR_16(var, val, idx1, idx2) \
-	do { \
+#define FILL_ADDR_16(var, val, idx1, idx2)       \
+	do {                                     \
 		var[idx1] = GET_1ST_NIBBLE(val); \
 		var[idx2] = GET_2ND_NIBBLE(val); \
 	} while (0)
 #define FILL_ADDR_32(var, val, idx1, idx2, idx3, idx4) \
-	do { \
-		var[idx1] = GET_1ST_NIBBLE(val); \
-		var[idx2] = GET_2ND_NIBBLE(val); \
-		var[idx3] = GET_3RD_NIBBLE(val); \
-		var[idx4] = GET_4TH_NIBBLE(val); \
+	do {                                           \
+		var[idx1] = GET_1ST_NIBBLE(val);       \
+		var[idx2] = GET_2ND_NIBBLE(val);       \
+		var[idx3] = GET_3RD_NIBBLE(val);       \
+		var[idx4] = GET_4TH_NIBBLE(val);       \
 	} while (0)
 
 #endif
