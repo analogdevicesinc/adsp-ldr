@@ -32,6 +32,14 @@ jobs:
     - name: Configure
       run: meson setup builddir
 
+    - name: Meson format
+      run: |
+        meson format -i
+        if ! git diff --exit-code; then
+          echo "ERROR: meson.build not formatted. Run meson format."
+          exit 1
+        fi
+
     - name: Clang format
       run: |
         ninja -C builddir clang-format
