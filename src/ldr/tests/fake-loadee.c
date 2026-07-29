@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	socklen_t slen;
 
 	if (argc == 1) {
- usage:
+usage:
 		fprintf(stderr,
 			"USAGE: fake-loadee [load method] <ldr invocation>\n"
 			"\n"
@@ -39,69 +39,68 @@ int main(int argc, char *argv[])
 			"  --tty\n"
 			"  --network (same as --tcp)\n"
 			"  --tcp\n"
-			"  --udp\n"
-		);
+			"  --udp\n");
 		return 1;
 	}
 
 	if (!strcmp(argv[1], "--tty"))
 		load = LOAD_TTY;
 	else if (!strcmp(argv[1], "--network"))
-		load =  LOAD_TCP;
+		load = LOAD_TCP;
 	else if (!strcmp(argv[1], "--udp"))
-		load =  LOAD_UDP;
+		load = LOAD_UDP;
 	else if (!strcmp(argv[1], "--tcp"))
-		load =  LOAD_TCP;
+		load = LOAD_TCP;
 	else {
 		--argv;
 		++argc;
-		load =  LOAD_TTY;
+		load = LOAD_TTY;
 	}
 	++argv;
 	--argc;
 
 	switch (load) {
-		case LOAD_TTY: {
-			int slave;
+	case LOAD_TTY: {
+		int slave;
 
-			/* the fake tty to load into */
-			ret = openpty(&in_fd, &slave, NULL, NULL, NULL);
-			assert(ret == 0);
+		/* the fake tty to load into */
+		ret = openpty(&in_fd, &slave, NULL, NULL, NULL);
+		assert(ret == 0);
 
-			/* load into the slave pty */
-			target = malloc(10);
-			sprintf(target, "#%i", slave);
-			break;
+		/* load into the slave pty */
+		target = malloc(10);
+		sprintf(target, "#%i", slave);
+		break;
+	}
+
+	case LOAD_UDP:
+	case LOAD_TCP: {
+		uint16_t random_local_port = 55192;
+
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(random_local_port);
+		addr.sin_addr.s_addr = inet_addr("0.0.0.0");
+
+		target = malloc(30);
+		if (load == LOAD_TCP) {
+			in_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+			sprintf(target, "tcp:localhost:%i", random_local_port);
+		} else {
+			in_fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+			sprintf(target, "udp:localhost:%i", random_local_port);
 		}
+		assert(in_fd != -1);
 
-		case LOAD_UDP:
-		case LOAD_TCP: {
-			uint16_t random_local_port = 55192;
+		slen = sizeof(*saddr);
+		ret = bind(in_fd, saddr, slen);
+		assert(ret == 0);
 
-			addr.sin_family = AF_INET;
-			addr.sin_port = htons(random_local_port);
-			addr.sin_addr.s_addr = inet_addr("0.0.0.0");
-
-			target = malloc(30);
-			if (load == LOAD_TCP) {
-				in_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-				sprintf(target, "tcp:localhost:%i", random_local_port);
-			} else {
-				in_fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-				sprintf(target, "udp:localhost:%i", random_local_port);
-			}
-			assert(in_fd != -1);
-
-			slen = sizeof(*saddr);
-			ret = bind(in_fd, saddr, slen);
+		if (load == LOAD_TCP) {
+			ret = listen(in_fd, 1);
 			assert(ret == 0);
-
-			if (load == LOAD_TCP) {
-				ret = listen(in_fd, 1);
-				assert(ret == 0);
-			}
-			break;
 		}
+		break;
+	}
 	}
 
 	/* output file representing the data loaded into the tty */
@@ -112,8 +111,8 @@ int main(int argc, char *argv[])
 	if (argc == 1)
 		goto usage;
 	for (i = 1; i < argc; ++i)
-		argv[i-1] = argv[i];
-	argv[argc-1] = target;
+		argv[i - 1] = argv[i];
+	argv[argc - 1] = target;
 
 	/* spawn the ldr prog and catch it exiting */
 	signal(SIGCHLD, child_exited);
@@ -122,7 +121,8 @@ int main(int argc, char *argv[])
 	if (!child) {
 		sleep(1);
 		ret = execvp(argv[0], argv);
-		fprintf(stderr, "ERROR: failed to execv(\"%s\"): %s\n", argv[0], strerror(errno));
+		fprintf(stderr, "ERROR: failed to execv(\"%s\"): %s\n", argv[0],
+			strerror(errno));
 		exit(ret);
 	} else {
 		if (load == LOAD_TCP) {

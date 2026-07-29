@@ -21,24 +21,29 @@ struct lfd_flag {
 };
 
 struct lfd_iovec {
-	void*    (*read_ldr_header)   (struct lfd *alfd, size_t *header_size);
-	void*    (*read_block_header) (struct lfd *alfd, bool *ignore, bool *fill, bool *final, size_t *header_len, size_t *data_len);
-	bool     (*display_ldr)       (struct lfd *alfd);
-	bool     (*display_dxe)       (struct lfd *alfd, const size_t dxe_idx);
-	bool     (*write_ldr)         (struct lfd *alfd, const void *opts);
-	bool     (*write_block)       (struct lfd *alfd, uint8_t dxe_flags, const void *opts, uint32_t addr, uint32_t count, void *src);
-	uint32_t (*dump_block)        (BLOCK *block, FILE *fp, bool dump_fill);
+	void *(*read_ldr_header)(struct lfd *alfd, size_t *header_size);
+	void *(*read_block_header)(struct lfd *alfd, bool *ignore, bool *fill,
+				   bool *final, size_t *header_len,
+				   size_t *data_len);
+	bool (*display_ldr)(struct lfd *alfd);
+	bool (*display_dxe)(struct lfd *alfd, const size_t dxe_idx);
+	bool (*write_ldr)(struct lfd *alfd, const void *opts);
+	bool (*write_block)(struct lfd *alfd, uint8_t dxe_flags,
+			    const void *opts, uint32_t addr, uint32_t count,
+			    void *src);
+	uint32_t (*dump_block)(BLOCK *block, FILE *fp, bool dump_fill);
 };
 
 struct lfd_target {
-	const char *name;        /* unique short name */
+	const char *name; /* unique short name */
 	const char *description; /* description of target */
-	const char * const *aliases;
+	const char *const *aliases;
 	const bool uart_boot;
 
 	struct lfd_iovec iovec;
-	Elf32_Half em;           /* Elf machine architecture. */
-	const bool dyn_sections; /* Whether or not this part accepts dynamic sections. */
+	Elf32_Half em; /* Elf machine architecture. */
+	const bool
+		dyn_sections; /* Whether or not this part accepts dynamic sections. */
 };
 
 typedef struct lfd {
@@ -56,10 +61,10 @@ typedef struct lfd {
 
 enum {
 	DXE_BLOCK_FIRST = 0x01,
-	DXE_BLOCK_INIT  = 0x02,
-	DXE_BLOCK_JUMP  = 0x04,
-	DXE_BLOCK_DATA  = 0x08,
-	DXE_BLOCK_FILL  = 0x10,
+	DXE_BLOCK_INIT = 0x02,
+	DXE_BLOCK_JUMP = 0x04,
+	DXE_BLOCK_DATA = 0x08,
+	DXE_BLOCK_FILL = 0x10,
 	DXE_BLOCK_FINAL = 0x20,
 };
 
@@ -94,19 +99,21 @@ static inline uint8_t compute_hdrchk(uint8_t *data, size_t len)
 
 /* let the BF53x family share funcs for now */
 bool bf53x_lfd_write_ldr(LFD *alfd, const void *void_opts);
-void *bf53x_lfd_read_block_header(LFD *alfd, bool *ignore, bool *fill, bool *final, size_t *header_len, size_t *data_len);
+void *bf53x_lfd_read_block_header(LFD *alfd, bool *ignore, bool *fill,
+				  bool *final, size_t *header_len,
+				  size_t *data_len);
 bool bf53x_lfd_display_dxe(LFD *alfd, size_t d);
-bool bf53x_lfd_write_block(LFD *alfd, uint8_t dxe_flags,
-                           const void *void_opts, uint32_t addr,
-                           uint32_t count, void *src);
+bool bf53x_lfd_write_block(LFD *alfd, uint8_t dxe_flags, const void *void_opts,
+			   uint32_t addr, uint32_t count, void *src);
 uint32_t bf53x_lfd_dump_block(BLOCK *block, FILE *fp, bool dump_fill);
 
 /* let the BF52x and BF54x family share funcs */
-void *bf54x_lfd_read_block_header(LFD *alfd, bool *ignore, bool *fill, bool *final, size_t *header_len, size_t *data_len);
+void *bf54x_lfd_read_block_header(LFD *alfd, bool *ignore, bool *fill,
+				  bool *final, size_t *header_len,
+				  size_t *data_len);
 bool bf54x_lfd_display_dxe(LFD *alfd, size_t d);
-bool bf54x_lfd_write_block(LFD *alfd, uint8_t dxe_flags,
-                           const void *void_opts, uint32_t addr,
-                           uint32_t count, void *src);
+bool bf54x_lfd_write_block(LFD *alfd, uint8_t dxe_flags, const void *void_opts,
+			   uint32_t addr, uint32_t count, void *src);
 uint32_t bf54x_lfd_dump_block(BLOCK *block, FILE *fp, bool dump_fill);
 
 /* Used to store a list of adi specific processors and their supported
@@ -120,12 +127,11 @@ uint32_t bf54x_lfd_dump_block(BLOCK *block, FILE *fp, bool dump_fill);
  * If no value is provided, the macro is assumed to set a value of 1
  */
 #define ADI_MAX_REVISIONS_LENGTH 256
-struct adi_processors
-{
-  char *const name;
-  char supportedRevisions[ADI_MAX_REVISIONS_LENGTH];
-  int num_cores;
-  char default_silicon_revision[ADI_MAX_REVISIONS_LENGTH];
+struct adi_processors {
+	char *const name;
+	char supportedRevisions[ADI_MAX_REVISIONS_LENGTH];
+	int num_cores;
+	char default_silicon_revision[ADI_MAX_REVISIONS_LENGTH];
 };
 
 #else

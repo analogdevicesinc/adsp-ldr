@@ -21,9 +21,11 @@ void lfd_target_register(const struct lfd_target *target)
 	if (!target->iovec.read_block_header)
 		warn("target '%s' does not support reading LDRs", target->name);
 	if (!target->iovec.display_dxe)
-		warn("target '%s' does not support displaying LDRs", target->name);
+		warn("target '%s' does not support displaying LDRs",
+		     target->name);
 	if (!target->iovec.write_block)
-		warn("target '%s' does not support creating LDRs", target->name);
+		warn("target '%s' does not support creating LDRs",
+		     target->name);
 	if (!target->iovec.dump_block)
 		warn("target '%s' does not support dumping LDRs", target->name);
 	new_node->target = target;
@@ -36,8 +38,8 @@ const struct lfd_target *lfd_target_find(const char *name)
 	const char *p;
 	size_t i, checklen;
 	struct list_item *curr = target_list;
-	if(strncmp(name, "ADSP-", 5)==0)
-		name+=5;
+	if (strncmp(name, "ADSP-", 5) == 0)
+		name += 5;
 	p = strchr(name, '-');
 	checklen = (p ? (size_t)(p - name) : strlen(name));
 	while (curr) {
@@ -46,8 +48,10 @@ const struct lfd_target *lfd_target_find(const char *name)
 				return curr->target;
 		if (curr->target->aliases)
 			for (i = 0; curr->target->aliases[i]; ++i)
-				if (!strncasecmp(name, curr->target->aliases[i], checklen))
-					if (checklen == strlen(curr->target->aliases[i]))
+				if (!strncasecmp(name, curr->target->aliases[i],
+						 checklen))
+					if (checklen ==
+					    strlen(curr->target->aliases[i]))
 						return curr->target;
 		curr = curr->next;
 	}
@@ -58,7 +62,8 @@ void lfd_target_list(void)
 {
 	struct list_item *curr = target_list;
 	while (curr) {
-		printf(" %s: %s\n", curr->target->name, curr->target->description);
+		printf(" %s: %s\n", curr->target->name,
+		       curr->target->description);
 		curr = curr->next;
 	}
 }
@@ -76,8 +81,8 @@ LFD *lfd_malloc(const char *target, const char *sirev)
 			alfd->selected_sirev = sirev;
 		} else {
 			char *p = alfd->dupped_mem;
-			if(strncmp(alfd->selected_target, "ADSP-", 5)==0)
-				p+=5;
+			if (strncmp(alfd->selected_target, "ADSP-", 5) == 0)
+				p += 5;
 			p = strchr(p, '-');
 			if (p) {
 				alfd->selected_sirev = p + 1;
@@ -91,7 +96,7 @@ LFD *lfd_malloc(const char *target, const char *sirev)
 
 		if (verbose)
 			printf("Selected part: %s\nSilicon revision: %s\n",
-					alfd->selected_target, alfd->selected_sirev);
+			       alfd->selected_target, alfd->selected_sirev);
 	}
 	return alfd;
 }
@@ -118,7 +123,8 @@ bool lfd_open(LFD *alfd, const char *filename)
 		}
 
 		if (!force && !S_ISREG(alfd->st.st_mode)) {
-			warn("LDR file is not a normal file: %s\nRe-run with --force to skip this check", filename);
+			warn("LDR file is not a normal file: %s\nRe-run with --force to skip this check",
+			     filename);
 			errno = EINVAL;
 			return false;
 		}
@@ -179,22 +185,26 @@ bool lfd_read(LFD *alfd)
 		ldr->header = NULL;
 		ldr->header_size = 0;
 	} else
-		ldr->header = alfd->target->iovec.read_ldr_header(alfd, &ldr->header_size);
+		ldr->header = alfd->target->iovec.read_ldr_header(
+			alfd, &ldr->header_size);
 
 	do {
-		tmp_header = alfd->target->iovec.read_block_header(alfd, &ignore, &fill, &final, &header_len, &data_len);
+		tmp_header = alfd->target->iovec.read_block_header(
+			alfd, &ignore, &fill, &final, &header_len, &data_len);
 		if (feof(fp))
 			break;
 
 		if (ldr->dxes == NULL) {
-			ldr->dxes = xrealloc(ldr->dxes, (++ldr->num_dxes) * sizeof(DXE));
+			ldr->dxes = xrealloc(ldr->dxes,
+					     (++ldr->num_dxes) * sizeof(DXE));
 			dxe = &ldr->dxes[d++];
 			dxe->num_blocks = 0;
 			dxe->blocks = NULL;
 		}
 
 		++dxe->num_blocks;
-		dxe->blocks = xrealloc(dxe->blocks, dxe->num_blocks * sizeof(BLOCK));
+		dxe->blocks =
+			xrealloc(dxe->blocks, dxe->num_blocks * sizeof(BLOCK));
 		block = &dxe->blocks[dxe->num_blocks - 1];
 		block->header_size = header_len;
 		block->offset = pos;
@@ -207,23 +217,26 @@ bool lfd_read(LFD *alfd)
 			size_t i;
 			printf("[header(0x%zx):", block->header_size);
 			for (i = 0; i < block->header_size; ++i)
-				printf("%s%02x", (i % 4 ? "" : " "), ((unsigned char *)block->header)[i]);
+				printf("%s%02x", (i % 4 ? "" : " "),
+				       ((unsigned char *)block->header)[i]);
 			printf("] [data(0x%08zx)]\n", block->data_size);
 		}
 
 		if (fill)
 			block->data = NULL;
 		else if (block->data_size) {
-			if (!force && block->data_size > (size_t)alfd->st.st_size) {
+			if (!force &&
+			    block->data_size > (size_t)alfd->st.st_size) {
 				err("corrupt LDR detected: %s\n"
-					"\tfile size is %zi bytes, but block %zi is %zi bytes long??\n"
-					"\tUse --force to skip this test\n"
-					"\tUse --debug to dump block headers\n",
-					alfd->filename, (size_t)alfd->st.st_size,
-					dxe->num_blocks, block->data_size);
+				    "\tfile size is %zi bytes, but block %zi is %zi bytes long??\n"
+				    "\tUse --force to skip this test\n"
+				    "\tUse --debug to dump block headers\n",
+				    alfd->filename, (size_t)alfd->st.st_size,
+				    dxe->num_blocks, block->data_size);
 			}
 			block->data = xmalloc(block->data_size);
-			if (fread(block->data, 1, block->data_size, fp) != block->data_size) {
+			if (fread(block->data, 1, block->data_size, fp) !=
+			    block->data_size) {
 				warn("unable to read LDR");
 				return false;
 			}
@@ -253,7 +266,8 @@ bool lfd_display(LFD *alfd)
 		ret &= alfd->target->iovec.display_ldr(alfd);
 
 	for (d = 0; d < ldr->num_dxes; ++d) {
-		printf("  DXE %zu at 0x%08zX:\n", d+1, ldr->dxes[d].blocks[0].offset);
+		printf("  DXE %zu at 0x%08zX:\n", d + 1,
+		       ldr->dxes[d].blocks[0].offset);
 		ret &= alfd->target->iovec.display_dxe(alfd, d);
 	}
 
@@ -264,23 +278,25 @@ bool lfd_display(LFD *alfd)
  *	lfd_blockify - break up large sections
  */
 static bool lfd_blockify(LFD *alfd, const struct ldr_create_options *opts,
-						 uint32_t dst_addr, size_t byte_count,
-						 void *src_addr, uint8_t bflags)
+			 uint32_t dst_addr, size_t byte_count, void *src_addr,
+			 uint8_t bflags)
 {
 	bool ret = true;
 	size_t bytes_to_write, bytes_written;
 
-	bflags |=  DXE_BLOCK_DATA | (src_addr ? 0 : DXE_BLOCK_FILL);
+	bflags |= DXE_BLOCK_DATA | (src_addr ? 0 : DXE_BLOCK_FILL);
 
 	bytes_written = 0;
 	do {
-		if (!opts->block_size || byte_count - bytes_written < opts->block_size)
+		if (!opts->block_size ||
+		    byte_count - bytes_written < opts->block_size)
 			bytes_to_write = byte_count - bytes_written;
 		else
 			bytes_to_write = opts->block_size;
 
-		ret &= alfd->target->iovec.write_block(alfd, bflags, opts,
-			dst_addr + bytes_written, bytes_to_write,
+		ret &= alfd->target->iovec.write_block(
+			alfd, bflags, opts, dst_addr + bytes_written,
+			bytes_to_write,
 			src_addr ? src_addr + bytes_written : NULL);
 
 		bytes_written += bytes_to_write;
@@ -310,7 +326,8 @@ bool lfd_create(LFD *alfd, const void *void_opts)
 	size_t i = 0;
 	int fd;
 
-	fd = open(outfile, O_RDWR|O_CREAT|O_TRUNC|O_BINARY, 00666); /* we just want +rw ... let umask sort out the rest */
+	fd = open(outfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY,
+		  00666); /* we just want +rw ... let umask sort out the rest */
 	if (fd == -1)
 		return false;
 
@@ -328,38 +345,55 @@ bool lfd_create(LFD *alfd, const void *void_opts)
 	/* write out one DXE per ELF given to us */
 	while (filelist[++i]) {
 		if (!quiet)
-			printf(" Adding DXE '%s' for Core%d ... ", filelist[i], opts->cur_core);
+			printf(" Adding DXE '%s' for Core%d ... ", filelist[i],
+			       opts->cur_core);
 
 		/* lets get this ELF rolling */
 		elf = elf_open(filelist[i], alfd->target->em);
 		if (elf == NULL) {
-			warn("'%s' doesn't have ELF machine type %d!", filelist[i], alfd->target->em);
+			warn("'%s' doesn't have ELF machine type %d!",
+			     filelist[i], alfd->target->em);
 			ret &= false;
 			continue;
 		}
 
 		/* if the user gave us some init code, let's pull the code out */
 		if (i == 1 && opts->init_code) {
-			elfobj *init = elf_open(opts->init_code, alfd->target->em);
+			elfobj *init =
+				elf_open(opts->init_code, alfd->target->em);
 			if (init == NULL) {
-				warn("'%s' doesn't have ELF machine type %d!", filelist[i], alfd->target->em);
+				warn("'%s' doesn't have ELF machine type %d!",
+				     filelist[i], alfd->target->em);
 				ret &= false;
 			} else {
 				void *shdr = elf_lookup_section(init, ".text");
-				uint32_t size = ELF_GET_SHDR_FIELD(init, shdr, sh_size);
+				uint32_t size =
+					ELF_GET_SHDR_FIELD(init, shdr, sh_size);
 
 				if (!size) {
-					warn("'%s' is missing .text to extract", opts->init_code);
+					warn("'%s' is missing .text to extract",
+					     opts->init_code);
 				} else {
-					uint32_t entry = ELF_GET_EHDR_FIELD(init, e_entry);
+					uint32_t entry = ELF_GET_EHDR_FIELD(
+						init, e_entry);
 					if (!quiet)
 						printf("[initcode %u] ", size);
 
-					alfd->target->iovec.write_block(alfd, DXE_BLOCK_FIRST, opts, entry, 0, 0);
-					lfd_blockify(alfd, opts, ELF_GET_SHDR_FIELD(init, shdr, sh_addr), size,
-					             init->data + ELF_GET_SHDR_FIELD(init, shdr, sh_offset),
-					             DXE_BLOCK_INIT);
-					alfd->target->iovec.write_block(alfd, DXE_BLOCK_INIT, opts, entry, 0, 0);
+					alfd->target->iovec.write_block(
+						alfd, DXE_BLOCK_FIRST, opts,
+						entry, 0, 0);
+					lfd_blockify(
+						alfd, opts,
+						ELF_GET_SHDR_FIELD(init, shdr,
+								   sh_addr),
+						size,
+						init->data + ELF_GET_SHDR_FIELD(
+								     init, shdr,
+								     sh_offset),
+						DXE_BLOCK_INIT);
+					alfd->target->iovec.write_block(
+						alfd, DXE_BLOCK_INIT, opts,
+						entry, 0, 0);
 				}
 
 				elf_close(init);
@@ -369,15 +403,20 @@ bool lfd_create(LFD *alfd, const void *void_opts)
 		uint32_t entry = ELF_GET_EHDR_FIELD(elf, e_entry);
 
 		/* First block for the DXE, with entry address */
-		alfd->target->iovec.write_block(alfd, DXE_BLOCK_FIRST, opts, entry, 0, NULL);
+		alfd->target->iovec.write_block(alfd, DXE_BLOCK_FIRST, opts,
+						entry, 0, NULL);
 
 		/* if the ELF has ldr init markers, let's pull the code out */
 		dxe_init_start = elf_lookup_symbol(elf, "dxe_init_start");
 		dxe_init_end = elf_lookup_symbol(elf, "dxe_init_end");
 		if (dxe_init_start != dxe_init_end) {
 			if (!quiet)
-				printf("[init block %zi] ", (size_t)(dxe_init_end - dxe_init_start));
-			alfd->target->iovec.write_block(alfd, DXE_BLOCK_INIT, opts, 0, (dxe_init_end-dxe_init_start), dxe_init_start);
+				printf("[init block %zi] ",
+				       (size_t)(dxe_init_end - dxe_init_start));
+			alfd->target->iovec.write_block(
+				alfd, DXE_BLOCK_INIT, opts, 0,
+				(dxe_init_end - dxe_init_start),
+				dxe_init_start);
 		}
 
 		size_t final_load, p, phnum = ELF_GET_EHDR_FIELD(elf, e_phnum);
@@ -390,19 +429,20 @@ bool lfd_create(LFD *alfd, const void *void_opts)
 		for (p = 0; p < phnum; ++p) {
 			void *phdr = ELF_GET_PHDR(elf, p);
 			switch (ELF_GET_PHDR_FIELD(elf, phdr, p_type)) {
-				case PT_LOAD:
-					final_load = p;
-					break;
+			case PT_LOAD:
+				final_load = p;
+				break;
 
-				case PT_INTERP:
-				case PT_DYNAMIC:
-					/* For certain targets we can ignore dynamic sections. */
-					if (!alfd->target->dyn_sections) {
-						warn("'%s' is not a static ELF!", filelist[i]);
-						elf_ok &= false;
-						p = phnum;
-					}
-					break;
+			case PT_INTERP:
+			case PT_DYNAMIC:
+				/* For certain targets we can ignore dynamic sections. */
+				if (!alfd->target->dyn_sections) {
+					warn("'%s' is not a static ELF!",
+					     filelist[i]);
+					elf_ok &= false;
+					p = phnum;
+				}
+				break;
 			}
 		}
 		/* if program headers are OK, then check for undefined symbols */
@@ -410,29 +450,45 @@ bool lfd_create(LFD *alfd, const void *void_opts)
 			size_t shi;
 
 			/* since one ELF can have multiple SYMTAB's, need to check them all */
-			for (shi = 0; shi < ELF_GET_EHDR_FIELD(elf, e_shnum); ++shi) {
+			for (shi = 0; shi < ELF_GET_EHDR_FIELD(elf, e_shnum);
+			     ++shi) {
 				void *shdr = ELF_GET_SHDR(elf, shi);
 
-				if (ELF_GET_SHDR_FIELD(elf, shdr, sh_type) != SHT_SYMTAB)
+				if (ELF_GET_SHDR_FIELD(elf, shdr, sh_type) !=
+				    SHT_SYMTAB)
 					continue;
 
-				void *symtab = elf->data + ELF_GET_SHDR_FIELD(elf, shdr, sh_offset);
-				size_t symcnt = ELF_GET_SHDR_FIELD(elf, shdr, sh_size) /
-				                ELF_GET_SHDR_FIELD(elf, shdr, sh_entsize);
-				void *strscn = ELF_GET_SHDR(elf, ELF_GET_SHDR_FIELD(elf, shdr, sh_link));
-				const char *strtab = elf->data + ELF_GET_SHDR_FIELD(elf, strscn, sh_offset);
+				void *symtab = elf->data +
+					       ELF_GET_SHDR_FIELD(elf, shdr,
+								  sh_offset);
+				size_t symcnt =
+					ELF_GET_SHDR_FIELD(elf, shdr, sh_size) /
+					ELF_GET_SHDR_FIELD(elf, shdr,
+							   sh_entsize);
+				void *strscn = ELF_GET_SHDR(
+					elf,
+					ELF_GET_SHDR_FIELD(elf, shdr, sh_link));
+				const char *strtab =
+					elf->data +
+					ELF_GET_SHDR_FIELD(elf, strscn,
+							   sh_offset);
 				size_t symi;
 
 				/* now check all of the SYMs in this SYMTAB section */
 				for (symi = 0; symi < symcnt; ++symi) {
-					void *sym = ELF_GET_SYM(elf, symtab, symi);
-					unsigned char info = ELF_GET_SYM_FIELD(elf, sym, st_info);
+					void *sym =
+						ELF_GET_SYM(elf, symtab, symi);
+					unsigned char info = ELF_GET_SYM_FIELD(
+						elf, sym, st_info);
 
-					if (ELF_GET_SYM_FIELD(elf, sym, st_shndx) != SHN_UNDEF)
+					if (ELF_GET_SYM_FIELD(elf, sym,
+							      st_shndx) !=
+					    SHN_UNDEF)
 						continue;
 
 					/* Skip notype symbol at index zero */
-					if (symi == 0 && ELF32_ST_TYPE(info) == STT_NOTYPE)
+					if (symi == 0 &&
+					    ELF32_ST_TYPE(info) == STT_NOTYPE)
 						continue;
 
 					/* VDSP labels "FILE" types as SHN_UNDEF */
@@ -443,8 +499,12 @@ bool lfd_create(LFD *alfd, const void *void_opts)
 					if (ELF32_ST_BIND(info) == STB_WEAK)
 						continue;
 
-					const char *symname = strtab + ELF_GET_SYM_FIELD(elf, sym, st_name);
-					warn("Undefined symbol '%s' in ELF!", symname);
+					const char *symname =
+						strtab +
+						ELF_GET_SYM_FIELD(elf, sym,
+								  st_name);
+					warn("Undefined symbol '%s' in ELF!",
+					     symname);
 					if (!force) {
 						elf_ok &= false;
 						break;
@@ -468,35 +528,51 @@ bool lfd_create(LFD *alfd, const void *void_opts)
 		 */
 		if (opts->jump_block) {
 			if (!quiet)
-				printf("[jump block to 0x%08"PRIX32"] ", entry);
-			alfd->target->iovec.write_block(alfd, DXE_BLOCK_JUMP, opts, entry,
-			                                DXE_JUMP_CODE_SIZE, dxe_jump_code(entry));
+				printf("[jump block to 0x%08" PRIX32 "] ",
+				       entry);
+			alfd->target->iovec.write_block(alfd, DXE_BLOCK_JUMP,
+							opts, entry,
+							DXE_JUMP_CODE_SIZE,
+							dxe_jump_code(entry));
 		}
 
 		/* extract each PT_LOAD program header */
 		for (p = 0; p < phnum; ++p) {
 			void *phdr = ELF_GET_PHDR(elf, p);
 			if (ELF_GET_PHDR_FIELD(elf, phdr, p_type) == PT_LOAD) {
-				size_t paddr = opts->use_vmas
-				               ? ELF_GET_PHDR_FIELD(elf, phdr, p_vaddr)
-				               : ELF_GET_PHDR_FIELD(elf, phdr, p_paddr);
-				size_t filesz = ELF_GET_PHDR_FIELD(elf, phdr, p_filesz);
-				size_t memsz = ELF_GET_PHDR_FIELD(elf, phdr, p_memsz);
+				size_t paddr =
+					opts->use_vmas ?
+						ELF_GET_PHDR_FIELD(elf, phdr,
+								   p_vaddr) :
+						ELF_GET_PHDR_FIELD(elf, phdr,
+								   p_paddr);
+				size_t filesz =
+					ELF_GET_PHDR_FIELD(elf, phdr, p_filesz);
+				size_t memsz =
+					ELF_GET_PHDR_FIELD(elf, phdr, p_memsz);
 
 				if (!quiet)
-					printf("[ELF block: %zi @ 0x%08zX] ", memsz, paddr);
+					printf("[ELF block: %zi @ 0x%08zX] ",
+					       memsz, paddr);
 
 				if (filesz) {
 					lfd_blockify(alfd, opts, paddr, filesz,
-					             elf->data + ELF_GET_PHDR_FIELD(elf, phdr, p_offset), 0);
+						     elf->data +
+							     ELF_GET_PHDR_FIELD(
+								     elf, phdr,
+								     p_offset),
+						     0);
 				}
 
 				if (memsz > filesz) {
-					lfd_blockify(alfd, opts, paddr + filesz, memsz - filesz, NULL, 0);
+					lfd_blockify(alfd, opts, paddr + filesz,
+						     memsz - filesz, NULL, 0);
 				}
 
 				if (!filelist[i + 1] && p == final_load) {
-					alfd->target->iovec.write_block(alfd, DXE_BLOCK_FINAL, opts, entry, 0, 0);
+					alfd->target->iovec.write_block(
+						alfd, DXE_BLOCK_FINAL, opts,
+						entry, 0, 0);
 				}
 			}
 		}
@@ -558,23 +634,30 @@ bool lfd_dump(LFD *alfd, const void *void_opts)
 			uint32_t target_address;
 
 			block = &(ldr->dxes[d].blocks[b]);
-			target_address = alfd->target->iovec.dump_block(block, fp_dxe, opts->dump_fill);
+			target_address = alfd->target->iovec.dump_block(
+				block, fp_dxe, opts->dump_fill);
 
-			if (fp_block != NULL && next_block_addr != target_address) {
+			if (fp_block != NULL &&
+			    next_block_addr != target_address) {
 				fclose(fp_block);
 				fp_block = NULL;
 			}
 			if (fp_block == NULL) {
-				snprintf(file_block, sizeof(file_block), "%s-%zi.dxe-%zi.block", base, d, b+1);
+				snprintf(file_block, sizeof(file_block),
+					 "%s-%zi.dxe-%zi.block", base, d,
+					 b + 1);
 				if (!quiet)
-					printf("    Dumping block %zi to %s\n", b+1, file_block);
+					printf("    Dumping block %zi to %s\n",
+					       b + 1, file_block);
 				fp_block = fopen(file_block, "wb");
 				if (fp_block == NULL)
 					perror("Unable to open block output");
 			}
 			if (fp_block != NULL) {
-				alfd->target->iovec.dump_block(block, fp_block, opts->dump_fill);
-				next_block_addr = target_address + block->data_size;
+				alfd->target->iovec.dump_block(block, fp_block,
+							       opts->dump_fill);
+				next_block_addr =
+					target_address + block->data_size;
 			}
 		}
 		fclose(fp_dxe);
@@ -598,23 +681,25 @@ bool lfd_dump(LFD *alfd, const void *void_opts)
  *    in the call to write()
  */
 struct ldr_load_method {
-	bool (*load)(LFD *alfd, const struct ldr_load_options *opts, const struct ldr_load_method *method);
+	bool (*load)(LFD *alfd, const struct ldr_load_options *opts,
+		     const struct ldr_load_method *method);
 	bool (*init)(void **void_state, const struct ldr_load_options *opts);
 	int (*open)(void *void_state);
 	int (*close)(void *void_state);
 	void (*flush)(void *void_state);
 };
 static bool ldr_load_uart(LFD *alfd, const struct ldr_load_options *opts,
-                          const struct ldr_load_method *method);
+			  const struct ldr_load_method *method);
 #ifdef HAVE_LIBUSB
 static bool ldr_load_sdp(LFD *alfd, const struct ldr_load_options *opts,
-                         const struct ldr_load_method *method);
+			 const struct ldr_load_method *method);
 #endif
 
 _UNUSED_PARAMETER_
-static bool ldr_load_stub(_UNUSED_PARAMETER_ LFD *alfd,
-                          _UNUSED_PARAMETER_ const struct ldr_load_options *opts,
-                          _UNUSED_PARAMETER_ const struct ldr_load_method *method)
+static bool
+ldr_load_stub(_UNUSED_PARAMETER_ LFD *alfd,
+	      _UNUSED_PARAMETER_ const struct ldr_load_options *opts,
+	      _UNUSED_PARAMETER_ const struct ldr_load_method *method)
 {
 	err("configure was unable to detect required features for this load function");
 	return false;
@@ -626,7 +711,8 @@ struct ldr_load_method_tty_state {
 	char *tty;
 	int fd;
 };
-static bool ldr_load_method_tty_init(void **void_state, const struct ldr_load_options *opts)
+static bool ldr_load_method_tty_init(void **void_state,
+				     const struct ldr_load_options *opts)
 {
 	struct ldr_load_method_tty_state *state;
 	char *tty;
@@ -637,7 +723,7 @@ static bool ldr_load_method_tty_init(void **void_state, const struct ldr_load_op
 	tty = state->tty = strdup(state->opts->dev);
 
 	if (!strncmp("tty:", tty, 4))
-		memmove(tty, tty+4, strlen(tty)-4+1);
+		memmove(tty, tty + 4, strlen(tty) - 4 + 1);
 
 	state->tty_locked = tty_lock(tty);
 	if (!state->tty_locked) {
@@ -663,7 +749,7 @@ static int ldr_load_method_tty_open(void *void_state)
 		if (state->fd == -1)
 			goto out;
 	} else
-		state->fd = atoi(tty+1);
+		state->fd = atoi(tty + 1);
 	printf("OK!\n");
 
 	printf("Configuring terminal I/O ... ");
@@ -676,7 +762,7 @@ static int ldr_load_method_tty_open(void *void_state)
 	} else
 		printf("OK!\n");
 
- out:
+out:
 	return state->fd;
 }
 static int ldr_load_method_tty_close(void *void_state)
@@ -696,9 +782,9 @@ static void ldr_load_method_tty_flush(void *void_state)
 		perror("tcdrain failed");
 }
 static const struct ldr_load_method ldr_load_method_tty = {
-	.load  = ldr_load_uart,
-	.init  = ldr_load_method_tty_init,
-	.open  = ldr_load_method_tty_open,
+	.load = ldr_load_uart,
+	.init = ldr_load_method_tty_init,
+	.open = ldr_load_method_tty_open,
 	.close = ldr_load_method_tty_close,
 	.flush = ldr_load_method_tty_flush,
 };
@@ -710,7 +796,8 @@ struct ldr_load_method_network_state {
 	int domain, type;
 	int fd;
 };
-static bool ldr_load_method_network_init(void **void_state, const struct ldr_load_options *opts)
+static bool ldr_load_method_network_init(void **void_state,
+					 const struct ldr_load_options *opts)
 {
 	struct ldr_load_method_network_state *state;
 	char *host, *port;
@@ -722,8 +809,16 @@ static bool ldr_load_method_network_init(void **void_state, const struct ldr_loa
 	} domains[] = {
 		/*{ "unix",  PF_UNIX,  SOCK_STREAM, },*/
 		/*{ "local", PF_LOCAL, SOCK_STREAM, },*/
-		{ "tcp",   PF_INET,  SOCK_STREAM, },
-		{ "udp",   PF_INET,  SOCK_DGRAM,  },
+		{
+			"tcp",
+			PF_INET,
+			SOCK_STREAM,
+		},
+		{
+			"udp",
+			PF_INET,
+			SOCK_DGRAM,
+		},
 	};
 
 	*void_state = state = xmalloc(sizeof(*state));
@@ -734,8 +829,8 @@ static bool ldr_load_method_network_init(void **void_state, const struct ldr_loa
 	for (i = 0; i < ARRAY_SIZE(domains); ++i) {
 		size_t len = strlen(domains[i].name);
 		if (!strncmp(domains[i].name, host, len) && host[len] == ':') {
-			memmove(host, host+len+1, strlen(host)-len+1);
- jump_back_in:
+			memmove(host, host + len + 1, strlen(host) - len + 1);
+jump_back_in:
 			state->domain = domains[i].domain;
 			state->type = domains[i].type;
 			break;
@@ -761,7 +856,7 @@ static bool ldr_load_method_network_init(void **void_state, const struct ldr_loa
 
 	return true;
 
- error:
+error:
 	warn("Invalid remote target specification");
 	free(state->host);
 	free(state);
@@ -775,7 +870,8 @@ static int ldr_load_method_network_open(void *void_state)
 	struct addrinfo *results, *res;
 	int s;
 
-	printf("Connecting to remote target '%s' on port '%s' ... ", state->host, state->port);
+	printf("Connecting to remote target '%s' on port '%s' ... ",
+	       state->host, state->port);
 
 	memset(&hints, 0x00, sizeof(hints));
 	hints.ai_flags = 0;
@@ -791,7 +887,8 @@ static int ldr_load_method_network_open(void *void_state)
 	}
 
 	for (res = results; res; res = res->ai_next) {
-		state->fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+		state->fd = socket(res->ai_family, res->ai_socktype,
+				   res->ai_protocol);
 		if (state->fd < 0)
 			break;
 
@@ -805,7 +902,8 @@ static int ldr_load_method_network_open(void *void_state)
 	if (state->fd >= 0) {
 		if (res->ai_protocol == IPPROTO_TCP) {
 			int on = 1;
-			if (setsockopt(state->fd, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(on)))
+			if (setsockopt(state->fd, IPPROTO_TCP, TCP_NODELAY, &on,
+				       sizeof(on)))
 				perror("setting TCP_NODELAY failed");
 		}
 		printf("OK!\n");
@@ -825,25 +923,25 @@ static void ldr_load_method_network_flush(_UNUSED_PARAMETER_ void *void_state)
 {
 }
 static const struct ldr_load_method ldr_load_method_network = {
-	.load  = ldr_load_uart,
-	.init  = ldr_load_method_network_init,
-	.open  = ldr_load_method_network_open,
+	.load = ldr_load_uart,
+	.init = ldr_load_method_network_init,
+	.open = ldr_load_method_network_open,
 	.close = ldr_load_method_network_close,
 	.flush = ldr_load_method_network_flush,
 };
 #else
 static const struct ldr_load_method ldr_load_method_network = {
-	.load  = ldr_load_stub,
+	.load = ldr_load_stub,
 };
 #endif
 
 #ifdef HAVE_LIBUSB
 static const struct ldr_load_method ldr_load_method_sdp = {
-	.load  = ldr_load_sdp,
+	.load = ldr_load_sdp,
 };
 #else
 static const struct ldr_load_method ldr_load_method_sdp = {
-	.load  = ldr_load_stub,
+	.load = ldr_load_stub,
 };
 #endif
 
@@ -886,7 +984,7 @@ static void *ldr_read_board(void *arg)
 	char buf[1024];
 
 	while (1) {
-		ssize_t ret = read(fd, buf, sizeof(buf)-1);
+		ssize_t ret = read(fd, buf, sizeof(buf) - 1);
 		if (ret > 0) {
 			buf[ret] = '\0';
 			printf("[board said: %s]\n", buf);
@@ -896,7 +994,7 @@ static void *ldr_read_board(void *arg)
 	return NULL;
 }
 static bool ldr_load_uart(LFD *alfd, const struct ldr_load_options *opts,
-                          const struct ldr_load_method *method)
+			  const struct ldr_load_method *method)
 {
 	LDR *ldr = alfd->ldr;
 	unsigned char autobaud[4] = { 0xFF, 0xFF, 0xFF, 0xFF };
@@ -909,7 +1007,8 @@ static bool ldr_load_uart(LFD *alfd, const struct ldr_load_options *opts,
 	pthread_t reader;
 
 	if (!alfd->target->uart_boot) {
-		warn("target '%s' does not support booting via UART", alfd->selected_target);
+		warn("target '%s' does not support booting via UART",
+		     alfd->selected_target);
 		return false;
 	}
 
@@ -948,7 +1047,7 @@ static bool ldr_load_uart(LFD *alfd, const struct ldr_load_options *opts,
 	printf("Checking autobaud ... ");
 	if (autobaud[0] != 0xBF || autobaud[3] != 0x00) {
 		printf("Failed: wanted {0xBF,..,..,0x00} but got {0x%02X,[0x%02X],[0x%02X],0x%02X}\n",
-			autobaud[0], autobaud[1], autobaud[2], autobaud[3]);
+		       autobaud[0], autobaud[1], autobaud[2], autobaud[3]);
 		goto out;
 	}
 	printf("OK!\n");
@@ -964,7 +1063,9 @@ static bool ldr_load_uart(LFD *alfd, const struct ldr_load_options *opts,
 
 	if (ldr->header) {
 		if (prompt)
-			if (ldr_send_prompt("Press any key to send global LDR header") == 'c')
+			if (ldr_send_prompt(
+				    "Press any key to send global LDR header") ==
+			    'c')
 				prompt = false;
 
 		alarm(10);
@@ -977,32 +1078,39 @@ static bool ldr_load_uart(LFD *alfd, const struct ldr_load_options *opts,
 	}
 
 	for (d = 0; d < ldr->num_dxes; ++d) {
-		printf("Sending blocks of DXE %zi ... ", d+1);
+		printf("Sending blocks of DXE %zi ... ", d + 1);
 		for (b = 0; b < ldr->dxes[d].num_blocks; ++b) {
 			BLOCK *block = &(ldr->dxes[d].blocks[b]);
 			int del;
 
 			if (prompt)
-				if (ldr_send_prompt("Press any key to send block header") == 'c')
+				if (ldr_send_prompt(
+					    "Press any key to send block header") ==
+				    'c')
 					prompt = false;
 
 			alarm(60);
 
 			if (verbose)
-				printf("[%zi:%zi bytes] ", block->header_size, block->data_size);
+				printf("[%zi:%zi bytes] ", block->header_size,
+				       block->data_size);
 
-			del = printf("[%zi/", b+1);
+			del = printf("[%zi/", b + 1);
 			ret = write(fd, block->header, block->header_size);
 			if (ret != (ssize_t)block->header_size)
 				goto pout;
 			method->flush(state);
 
 			if (prompt && block->data != NULL)
-				if (ldr_send_prompt("Press any key to send block data") == 'c')
+				if (ldr_send_prompt(
+					    "Press any key to send block data") ==
+				    'c')
 					prompt = false;
 
 			del += printf("%zi] (%2.0f%%)", ldr->dxes[d].num_blocks,
-			              ((float)(b+1) / (float)ldr->dxes[d].num_blocks) * 100);
+				      ((float)(b + 1) /
+				       (float)ldr->dxes[d].num_blocks) *
+					      100);
 			if (block->data != NULL) {
 				ret = write(fd, block->data, block->data_size);
 				if (ret != (ssize_t)block->data_size)
@@ -1018,11 +1126,11 @@ static bool ldr_load_uart(LFD *alfd, const struct ldr_load_options *opts,
 			if (opts->ack) {
 				/* The target acknowledges each sent block.  So wait for this
 				   before continuing. */
-				int i=0;
+				int i = 0;
 				if (verbose)
 					printf("\nWaiting for block acknowledgement...");
 				/* Give the target a max ~100 seconds to process a block. */
-				while (i<1000) {
+				while (i < 1000) {
 					ret = read_retry(fd, autobaud, 5);
 					if (ret == 5)
 						break;
@@ -1032,13 +1140,14 @@ static bool ldr_load_uart(LFD *alfd, const struct ldr_load_options *opts,
 				if (ret != 5) {
 					printf("\nTimeout: Didn't receive Block Acknowledgement\n");
 					goto out;
-				} else if (autobaud[0] != 0xBF || autobaud[3] != 0x01) {
+				} else if (autobaud[0] != 0xBF ||
+					   autobaud[3] != 0x01) {
 					printf("\nBad Block Acknowledgement: wanted {0xBF,..,..,0x01} but got {0x%02X,[0x%02X],[0x%02X],0x%02X}\n",
-						autobaud[0], autobaud[1], autobaud[2], autobaud[3]);
+					       autobaud[0], autobaud[1],
+					       autobaud[2], autobaud[3]);
 					goto out;
-				} else
-					if (verbose)
-			            printf("OK!\n");
+				} else if (verbose)
+					printf("OK!\n");
 			}
 		}
 		printf("OK!\n");
@@ -1049,9 +1158,9 @@ static bool ldr_load_uart(LFD *alfd, const struct ldr_load_options *opts,
 		       "Quick tip: run 'ldr <ldr> <devspec> && minicom'\n");
 
 	ok = true;
- pout:
+pout:
 	pthread_cancel(reader);
- out:
+out:
 	if (!ok)
 		perror("Failed");
 	if (fd != -1)
@@ -1064,7 +1173,7 @@ static bool ldr_load_uart(LFD *alfd, const struct ldr_load_options *opts,
 
 #ifdef HAVE_LIBUSB
 static bool sdp_transfer(libusb_device_handle *devh, unsigned char ep,
-                         void *udata, int ulen, unsigned int timeout)
+			 void *udata, int ulen, unsigned int timeout)
 {
 	int actual, ret, len;
 	void *data;
@@ -1081,8 +1190,8 @@ static bool sdp_transfer(libusb_device_handle *devh, unsigned char ep,
 
 	ret = libusb_bulk_transfer(devh, ep, data, len, &actual, timeout);
 	if (ret || actual != len) {
-		warn("libusb_bulk_transfer(%#x) = %i (len:%i actual:%i)",
-		     ep, ret, len, actual);
+		warn("libusb_bulk_transfer(%#x) = %i (len:%i actual:%i)", ep,
+		     ret, len, actual);
 		return false;
 	}
 
@@ -1092,36 +1201,39 @@ static bool sdp_transfer(libusb_device_handle *devh, unsigned char ep,
 	return true;
 }
 
-static bool sdp_cmd(libusb_device_handle *devh, u32 cmd, u32 out_len, u32 in_len,
-                    u32 num_params, u32 *params, void *in_buf)
+static bool sdp_cmd(libusb_device_handle *devh, u32 cmd, u32 out_len,
+		    u32 in_len, u32 num_params, u32 *params, void *in_buf)
 {
 	int timeout = 0;
 	struct sdp_header pkt;
 	u32 np;
 
 	/* these are read by the Blackfin proc, so make sure they're LE */
-	pkt.cmd        = ldr_make_little_endian_32(cmd);
-	pkt.out_len    = ldr_make_little_endian_32(out_len);
-	pkt.in_len     = ldr_make_little_endian_32(in_len);
+	pkt.cmd = ldr_make_little_endian_32(cmd);
+	pkt.out_len = ldr_make_little_endian_32(out_len);
+	pkt.in_len = ldr_make_little_endian_32(in_len);
 	pkt.num_params = ldr_make_little_endian_32(num_params);
 	for (np = 0; np < num_params; ++np)
 		pkt.params[np] = ldr_make_little_endian_32(params[np]);
 
-	if (!sdp_transfer(devh, ADI_SDP_WRITE_ENDPOINT, &pkt, sizeof(pkt), timeout))
+	if (!sdp_transfer(devh, ADI_SDP_WRITE_ENDPOINT, &pkt, sizeof(pkt),
+			  timeout))
 		return false;
 
 	if (in_buf)
-		if (!sdp_transfer(devh, ADI_SDP_READ_ENDPOINT | LIBUSB_ENDPOINT_IN,
-		                  in_buf, in_len, timeout))
+		if (!sdp_transfer(devh,
+				  ADI_SDP_READ_ENDPOINT | LIBUSB_ENDPOINT_IN,
+				  in_buf, in_len, timeout))
 			return false;
 
 	return true;
 }
 #define sdp_cmd1(devh, cmd) sdp_cmd(devh, cmd, 0, 0, 0, NULL, NULL)
 
-static bool ldr_load_sdp(_UNUSED_PARAMETER_ LFD *alfd,
-                         _UNUSED_PARAMETER_ const struct ldr_load_options *opts,
-                         _UNUSED_PARAMETER_ const struct ldr_load_method *method)
+static bool
+ldr_load_sdp(_UNUSED_PARAMETER_ LFD *alfd,
+	     _UNUSED_PARAMETER_ const struct ldr_load_options *opts,
+	     _UNUSED_PARAMETER_ const struct ldr_load_method *method)
 {
 	int ret;
 	int vid, pid;
@@ -1160,20 +1272,19 @@ static bool ldr_load_sdp(_UNUSED_PARAMETER_ LFD *alfd,
 
 	printf("Checking firmware ... ");
 	struct sdp_version firmware;
-	char date[sizeof(firmware.datestamp)+1];
-	char time[sizeof(firmware.timestamp)+1];
+	char date[sizeof(firmware.datestamp) + 1];
+	char time[sizeof(firmware.timestamp) + 1];
 	sdp_cmd(devh, ADI_SDP_CMD_GET_FW_VERSION, 0, 32, 0, NULL, &firmware);
 	memcpy(date, firmware.datestamp, sizeof(firmware.datestamp));
 	date[sizeof(firmware.datestamp)] = '\0';
 	memcpy(time, firmware.timestamp, sizeof(firmware.timestamp));
 	time[sizeof(firmware.timestamp)] = '\0';
 	printf("Rev: %i.%i Host: %i Blackfin: %i Date: %s %s Bmode: %i\n",
-		ldr_make_little_endian_32(firmware.rev.major),
-		ldr_make_little_endian_32(firmware.rev.minor),
-		ldr_make_little_endian_32(firmware.rev.host),
-		ldr_make_little_endian_32(firmware.rev.bfin),
-		date, time,
-		ldr_make_little_endian_32(firmware.bmode) & 0xf);
+	       ldr_make_little_endian_32(firmware.rev.major),
+	       ldr_make_little_endian_32(firmware.rev.minor),
+	       ldr_make_little_endian_32(firmware.rev.host),
+	       ldr_make_little_endian_32(firmware.rev.bfin), date, time,
+	       ldr_make_little_endian_32(firmware.bmode) & 0xf);
 
 	char data[ADI_SDP_SDRAM_PKT_MAX_LEN];
 	uint32_t offset, chunk, this_chunk;
@@ -1194,21 +1305,23 @@ static bool ldr_load_sdp(_UNUSED_PARAMETER_ LFD *alfd,
 			params[1] = 0;
 		this_chunk = fread_retry(data, 1, chunk, alfd->fp);
 
-		sdp_cmd(devh, ADI_SDP_CMD_SDRAM_PROGRAM_BOOT, this_chunk, 0, 2, params, NULL);
-		if (!sdp_transfer(devh, ADI_SDP_WRITE_ENDPOINT, data, this_chunk, 0))
+		sdp_cmd(devh, ADI_SDP_CMD_SDRAM_PROGRAM_BOOT, this_chunk, 0, 2,
+			params, NULL);
+		if (!sdp_transfer(devh, ADI_SDP_WRITE_ENDPOINT, data,
+				  this_chunk, 0))
 			goto err_iface;
 
 		ldr_send_erase_output(del);
 	}
 	puts("OK!");
 
- err_iface:
+err_iface:
 	libusb_release_interface(devh, 0);
- err_devh:
+err_devh:
 	libusb_close(devh);
- err_init:
+err_init:
 	libusb_exit(ctx);
- err:
+err:
 	return false;
 }
 #endif
