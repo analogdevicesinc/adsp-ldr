@@ -2,7 +2,7 @@ project(
     'adsp-ldr',
     'c',
     version: run_command(['utils/version.sh', 'get-vcs'], check: true).stdout().strip(),
-    meson_version: '>= 1.4.0',
+    meson_version: '>= 1.5.0',
 )
 
 meson.add_dist_script('utils/version.sh', 'set-dist', meson.project_version())
